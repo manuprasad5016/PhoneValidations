@@ -1,0 +1,275 @@
+<!--
+*****************************************************************************************************************************
+@ Class:          validationRulesTab
+@ Version:        1.0
+@ Author:         Manu Prasad A (madeyilliam@salesforce.com) 
+@ Purpose:        This Component is used for creating and Editig metadata Records for generic Phone number Validation Component from Lightning Tab
+*****************************************************************************************************************************
+@ Change history:  11.04.2021 / Manu Prasad A / Created the LWC Component.  
+******************************************************************************************************************************  -->
+
+<template>
+    <div style="height: 100%;width:100%;background:white">
+        <lightning-card>
+            <lightning-button label="New" onclick={createValidationRule} slot="actions">
+            </lightning-button>
+            <h3 slot="title">
+                <lightning-icon icon-name="action:share_poll" size="small"></lightning-icon> &nbsp; Validation Rule
+            </h3>
+            <div if:true={validationRecords}>
+                <c-custom-lightning-data-table onsort={updateColumnSorting} sorted-by={sortBy}
+                    sorted-direction={sortDirection} onshowrulerecs={handleRuleAction} key-field="Id"
+                    show-row-number-column hide-checkbox-column data={validationRecords} columns={columnsValidations}
+                    onrowaction={handleRowAction}>
+                </c-custom-lightning-data-table>
+            </div>
+            <div if:false={validationRecords} style="margin-left: 20px;">
+                No Records Exist
+            </div>
+        </lightning-card>
+
+        <div style="height: 20px; background: lightsteelblue;"></div>
+
+        <lightning-card>
+            <!-- <lightning-button label="Manage Child Rules" onclick={OpenManageChildRule} slot="actions"></lightning-button> -->
+            <lightning-button label="Remove" onclick={deleteRuleRecs} slot="actions"></lightning-button>
+            <h3 slot="title">
+                <lightning-icon icon-name="action:filter" size="small"></lightning-icon> &nbsp; Selected Child Rules for - {validTitle}
+            </h3>
+            <div if:true={childRulesRecs}>
+                <lightning-datatable key-field="Id" show-row-number-column onrowselection={getSelectedRowDetailsSecond}
+                    data={childRulesRecs} columns={columnsChildRecsDelete} onrowaction={handleRowActionFirst}>
+                </lightning-datatable>
+            </div>
+            <div if:false={childRulesRecs} style="margin-left: 20px;">
+                No Records Exist
+            </div>
+        </lightning-card>
+
+        <div style="height: 10px; background: steelblue;"></div>
+
+        <lightning-card> 
+            <lightning-button label="Add" onclick={createRulesRec} slot="actions"></lightning-button> 
+            <lightning-button label="New Child Rules" onclick={newChildRule} slot="actions"></lightning-button>
+            <h3 slot="title">
+                <lightning-icon icon-name="action:flow" size="small"></lightning-icon> &nbsp; Available Child Rules for - {validTitle}
+            </h3>
+            <div if:true={allChildRecContext}>
+                <lightning-datatable key-field="Id" show-row-number-column onrowselection={getSelectedRowDetails}
+                    data={allChildRecContext} columns={columnsChildRecsDelete} onrowaction={handleRowActionAllChild}>
+                </lightning-datatable>
+            </div>
+            <div if:false={allChildRecContext} style="margin-left: 20px;">
+                No Records Exist
+            </div>
+        </lightning-card>
+
+        <div style="height: 20px; background: lightsteelblue;"></div>
+
+        <template if:true={showAllChilds}>
+            <lightning-card> 
+            <lightning-accordion allow-multiple-sections-open class="example-accordion">
+                    <lightning-accordion-section name="B" label="All Child Rules">
+                        <lightning-card> 
+                            <!-- <lightning-button label="Add" onclick={createRulesRec} slot="actions"></lightning-button> -->
+                            <lightning-button label="New Child Rules" onclick={newChildRule} slot="actions"></lightning-button>
+                            <h3 slot="title">
+                                <lightning-icon icon-name="action:description" size="small"></lightning-icon> &nbsp; All Child Rules
+                            </h3>
+                            <div if:true={allChildRules}>
+                                <lightning-datatable key-field="Id" show-row-number-column hide-checkbox-column
+                                    data={allChildRules} columns={columnsChildRecsDelete} onrowaction={handleRowActionAllChild}>
+                                </lightning-datatable>
+                            </div>
+                            <div if:false={allChildRules} style="margin-left: 20px;">
+                                No Records Exist
+                            </div>
+                        </lightning-card>
+                </lightning-accordion-section> 
+            </lightning-accordion>
+            </lightning-card>
+        </template>
+    </div>
+
+
+
+    <div class="slds-theme_default">
+        <template if:true={openmodel}>
+            <div class="demo-only" style="height: 640px;">
+                <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true"
+                    aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+                    <div class="slds-modal__container">
+                        <header class="slds-modal__header">
+                            <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                                title="Close" onclick={closeModal}>
+                                <lightning-icon icon-name="utility:close" size="medium">
+                                </lightning-icon>
+                                <span class="slds-assistive-text">Close</span>
+                            </button>
+                            <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">New Validation
+                                Rule</h2>
+                        </header>
+                        <div class="slds-modal__content slds-var-p-around_medium" id="modal-content-id-1">
+                            <div class="slds-grid slds-gutters">
+                                <!-- First Column -->
+                                <div class="slds-col">
+                                    <span>
+                                        <div class="slds-p-around_medium lgc-bg">
+                                            <lightning-input type="text" value={validationName} disabled={disable}
+                                                name="validationName" label="Validation Rule Name"
+                                                placeholder="Unique Name" required>
+                                            </lightning-input>
+                                            <br />
+                                            <lightning-input type="text" name="fieldsListName" value={fieldsList}
+                                                label="Validation Fields" placeholder="Fields seperated by comma"
+                                                required>
+                                            </lightning-input>
+
+                                        </div>
+                                    </span>
+                                </div>
+                                <!-- First Column End-->
+
+                                <!-- Second Column -->
+                                <div class="slds-col">
+                                    <span>
+                                        <div class="slds-p-around_medium lgc-bg">
+                                            <c-custom-Lookup onsearch={handleObjectSearch} required
+                                                onselectionchange={handleObjectChange} label="Object"
+                                                placeholder="Search Objects"></c-custom-Lookup>
+
+                                        </div>
+                                    </span>
+                                </div>
+                                <!-- Second Column End-->
+                            </div>
+
+                            <div style="margin-left: 40px;">
+                                <lightning-radio-group name="radioGroup" onchange={handleRadioChange}
+                                    label="Validation Type" options={optionsCheckbox} value={valueCheckbox} required
+                                    type="radio">
+                                </lightning-radio-group>
+                            </div>
+
+                            <template if:true={staticValidation}>
+                                <div class="slds-grid slds-gutters">
+                                    <!-- First Column -->
+                                    <div class="slds-col">
+                                        <span>
+                                            <div class="slds-p-around_medium lgc-bg">
+                                                <lightning-input type="text" name="regexExpName" value={regexExp}
+                                                    label="Regex Expression" placeholder="Enter Regex" required>
+                                                </lightning-input>
+                                            </div>
+                                        </span>
+                                    </div>
+                                    <!-- First Column End-->
+
+                                    <!-- Second Column -->
+                                    <div class="slds-col">
+                                        <span>
+                                            <div class="slds-p-around_medium lgc-bg">
+                                                <lightning-input type="text" name="errorMessageName"
+                                                    value={errorMessage} label="Error Message"
+                                                    placeholder="Error Message" required>
+                                                </lightning-input>
+                                            </div>
+                                        </span>
+                                    </div>
+                                    <!-- Second Column End-->
+                                </div>
+                            </template>
+
+                            <template if:false={staticValidation}>
+                                <div class="slds-grid slds-gutters">
+                                    <!-- First Column -->
+                                    <div class="slds-col">
+                                        <span>
+                                            <div class="slds-p-around_medium lgc-bg">
+                                                <lightning-input type="text" name="dependentFieldName" required
+                                                    value={dependentField} label="Dependent Field"
+                                                    placeholder="Dependent Field ">
+                                                </lightning-input>
+                                            </div>
+                                        </span>
+                                    </div>
+                                    <!-- First Column End-->
+                                    <!-- Second Column -->
+                                    <div class="slds-col">
+                                        <span>
+                                            <div class="slds-p-around_medium lgc-bg">
+
+                                            </div>
+                                        </span>
+                                    </div>
+                                    <!-- Second Column End-->
+                                </div>
+                            </template>
+                            <div class="slds-p-around_medium lgc-bg">
+                                <lightning-input type="checkbox" checked={activeStatus} data-id="checkbox"
+                                    label="Active" onchange={checkboxHandler}>
+                                </lightning-input>
+                            </div>
+                        </div>
+                        <footer class="slds-modal__footer">
+                            <div style="display: inline-flex;">
+                                <lightning-button label="Save" variant="neutral" onclick={saveMetadata}>
+                                </lightning-button>
+                                <lightning-button label="Cancel" variant="neutral" onclick={closeModal}>
+                                </lightning-button>
+                            </div>
+                        </footer>
+                    </div>
+                </section>
+                <div class="slds-backdrop slds-backdrop_open"></div>
+            </div>
+        </template>
+
+        <!-- Second Modal Box -->
+        <template if:true={openmodelSecond}>
+            <div class="demo-only" style="height: 640px;">
+                <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true"
+                    aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+                    <div class="slds-modal__container">
+                        <header class="slds-modal__header">
+                            <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                                title="Close" onclick={closeModalTwo}>
+                                <lightning-icon icon-name="utility:close" size="medium">
+                                </lightning-icon>
+                                <span class="slds-assistive-text">Close</span>
+                            </button>
+                            <h2 id="modal-heading-101" class="slds-text-heading_medium slds-hyphenate">Child
+                                Rule</h2>
+                        </header>
+                        <div class="slds-modal__content slds-var-p-around_medium" id="modal-content-id-001">
+                            <lightning-record-edit-form object-api-name="Child_Rule__c" record-id={recordId} onsuccess={handleSuccess} onerror={errorHandler}>
+                                <lightning-messages></lightning-messages>
+                                <div class="slds-grid" style="padding-top: 20px;"> 
+                                    <div class="slds-col slds-size_1-of-2">
+                                        <lightning-input-field required field-name="Name"> </lightning-input-field>
+                                        <lightning-input-field required field-name="SObject__c" disabled={sobjectVisibility}></lightning-input-field>
+                                        <lightning-input-field required field-name="Key__c"></lightning-input-field>
+                                        <lightning-input-field required field-name="Error_Message__c"></lightning-input-field>
+                                        </div>
+                                    <div class="slds-col slds-size_1-of-2" style="padding-left: 6px;">
+                                        <lightning-input-field required field-name="Dependent_Field__c" disabled={DependentVisibility}></lightning-input-field>
+                                        <lightning-input-field required field-name="Regex_Expression__c"></lightning-input-field>
+                                    </div>
+                                </div> 
+                                <br /> 
+                                <div style="margin-left: 70%;margin-top: 20px;display:inline-flex">
+                                    <lightning-button type="submit" variant="neutral" label="Save" title="Save"> </lightning-button>
+                                    &nbsp;&nbsp;<lightning-button label="Cancel" variant="neutral" onclick={closeModalTwo}>
+                                    </lightning-button>
+                                </div> 
+                            </lightning-record-edit-form>
+                        </div> 
+                    </div>
+                </section>
+                <div class="slds-backdrop slds-backdrop_open"></div>
+            </div>
+        </template>
+
+        <!-- Second End -->
+    </div>
+</template>

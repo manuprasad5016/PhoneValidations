@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>ValidationRulesTabController</members>
+        <members>PhoneValidator</members>
+        <members>SampleLookupController</members>
+        <members>LookupSearchResult</members>
+        <members>ValidationRulesTabControllerTest</members>
+        <members>PhoneValidatorTest</members>
+        <name>ApexClass</name>
+    </types>
+   
+    <types>
+        <members>AccountTrigger</members>
+        <name>ApexTrigger</name>
+    </types>
+
+    <types>
+        <members>validationRulesTab</members>
+        <members>customLightningDataTable</members>
+        <members>textDatatype</members>
+        <members>customLookup</members>
+        <name>LightningComponentBundle</name>
+    </types>
+
+    <types>
+        <members>Bypass_Dependent_Field</members>
+        <name>customLabel</name>
+    </types>
+
+    <version>51.0</version>
+</Package>
